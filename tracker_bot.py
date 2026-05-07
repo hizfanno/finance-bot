@@ -16,11 +16,35 @@ ALLOWED_USERS = os.getenv("ALLOWED_USERS").split(",")
 OWNER = os.getenv("OWNER_NAME")
 EXCEL_FILE = os.getenv("EXCEL_FILE")
 
-print("TOKEN:", TOKEN)
 
 def is_allowed(update):
     user_id = str(update.effective_user.id)
     return user_id in ALLOWED_USERS
+
+
+def rupiah(amount):
+    return f"{amount:,}".replace(",", ".")
+
+
+def get_google_client():
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+
+    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+    creds = Credentials.from_service_account_info(
+        google_creds,
+        scopes=scope
+    )
+
+    return gspread.authorize(creds)
+
+
+def get_sheet():
+    client = get_google_client()
+    return client.open("Daily Finance").worksheet("Pengeluaran")
 
 
 def save_to_excel(category, amount):
@@ -41,41 +65,10 @@ def save_to_excel(category, amount):
 
     wb.save(EXCEL_FILE)
 
-def get_sheet():
-
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-
-    creds = Credentials.from_service_account_info(
-        google_creds,
-        scopes=scope
-    )
-
-    client = gspread.authorize(creds)
-
-    return client.open("Daily Finance").worksheet("Pengeluaran")
 
 def save_to_google_sheet(category, amount, username):
 
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-
-creds = Credentials.from_service_account_info(
-    google_creds,
-    scopes=scope
-)
-
-    client = gspread.authorize(creds)
-
-    sheet = client.open("Daily Finance").worksheet("Pengeluaran")
+    sheet = get_sheet()
 
     row = [
         datetime.now().strftime("%d-%m-%Y %H:%M"),
@@ -86,9 +79,10 @@ creds = Credentials.from_service_account_info(
     ]
 
     sheet.append_row(
-    row,
-    table_range="A:E"
-)
+        row,
+        table_range="A:E"
+    )
+
 
 async def month(update, context):
 
@@ -97,28 +91,13 @@ async def month(update, context):
 
     username = update.effective_user.first_name
 
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-
-creds = Credentials.from_service_account_info(
-    google_creds,
-    scopes=scope
-)
-
-    client = gspread.authorize(creds)
-    sheet = client.open("Daily Finance").worksheet("Pengeluaran")
-
+    sheet = get_sheet()
     rows = sheet.get_all_values()
 
     current_month = datetime.now().strftime("%m-%Y")
 
     summary = {}
     total = 0
-
 
     for row in rows[1:]:
 
@@ -140,7 +119,6 @@ creds = Credentials.from_service_account_info(
         summary[kategori] = summary.get(kategori, 0) + nominal
         total += nominal
 
-
     message = f"📅 {datetime.now().strftime('%B %Y')} — {username}\n\n"
 
     for kategori, amount in summary.items():
@@ -149,6 +127,7 @@ creds = Credentials.from_service_account_info(
     message += f"\n💰 Total: Rp {rupiah(total)}"
 
     await update.message.reply_text(message)
+
 
 async def today(update, context):
 
@@ -164,7 +143,6 @@ async def today(update, context):
 
     summary = {}
     total = 0
-
 
     for row in rows[1:]:
 
@@ -186,7 +164,6 @@ async def today(update, context):
         summary[kategori] = summary.get(kategori, 0) + nominal
         total += nominal
 
-
     message = f"📆 Hari ini — {username}\n\n"
 
     for kategori, amount in summary.items():
@@ -195,6 +172,7 @@ async def today(update, context):
     message += f"\n💰 Total: Rp {rupiah(total)}"
 
     await update.message.reply_text(message)
+
 
 async def top(update, context):
 
@@ -209,7 +187,6 @@ async def top(update, context):
     current_month = datetime.now().strftime("%m-%Y")
 
     summary = {}
-
 
     for row in rows[1:]:
 
@@ -230,77 +207,28 @@ async def top(update, context):
 
         summary[kategori] = summary.get(kategori, 0) + nominal
 
-
     sorted_items = sorted(
         summary.items(),
         key=lambda x: x[1],
         reverse=True
     )
 
+    medals = ["🥇", "🥈", "🥉"]
 
     message = "🏆 Top Spending\n\n"
 
-    medals = ["🥇", "🥈", "🥉"]
-
-
     for i, (kategori, amount) in enumerate(sorted_items[:3]):
-
-        medal = medals[i]
-
-        message += f"{medal} {kategori}: Rp {rupiah(amount)}\n"
-
+        message += f"{medals[i]} {kategori}: Rp {rupiah(amount)}\n"
 
     await update.message.reply_text(message)
 
-async def help_command(update, context):
-
-    if not is_allowed(update):
-        return
-
-    message = """
-📋 Finance Bot Menu
-
-➕ Input Pengeluaran
-☕ /kopi 25
-🚬 /rokok 36
-⛽ /bensin 50
-🍚 /makan 20
-🧴 /skincare 50
-✨ /lifestyle 100
-🛍️ /kebutuhan 75
-📦 /misc 20
-
-📊 Report
-📅 /month    → bulan ini
-📆 /today    → hari ini
-👤 /me       → data pribadi
-🏆 /top      → kategori terbesar
-
-ℹ️ /help     → lihat menu
-"""
-
-    await update.message.reply_text(message)
 
 async def summary(update, context):
 
     if not is_allowed(update):
         return
 
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-
-creds = Credentials.from_service_account_info(
-    google_creds,
-    scopes=scope
-)
-
-    client = gspread.authorize(creds)
-
-    sheet = client.open("Daily Finance").worksheet("Pengeluaran")
+    sheet = get_sheet()
 
     kopi = int(sheet.acell("H2").value or 0)
     rokok = int(sheet.acell("H3").value or 0)
@@ -320,6 +248,7 @@ creds = Credentials.from_service_account_info(
 """
     )
 
+
 async def me(update, context):
 
     if not is_allowed(update):
@@ -328,12 +257,10 @@ async def me(update, context):
     username = update.effective_user.first_name
 
     sheet = get_sheet()
-
     data = sheet.get_all_records()
 
     summary = {}
     total = 0
-
 
     for row in data:
 
@@ -344,9 +271,7 @@ async def me(update, context):
         nominal = int(row["Nominal"])
 
         summary[kategori] = summary.get(kategori, 0) + nominal
-
         total += nominal
-
 
     emoji_map = {
         "Kopi": "☕",
@@ -359,52 +284,42 @@ async def me(update, context):
         "Misc": "📦"
     }
 
-
     message = f"👤 {username}\n\n"
 
-
     for kategori, amount in summary.items():
-
         emoji = emoji_map.get(kategori, "💸")
-
         message += f"{emoji} {kategori}: Rp {rupiah(amount)}\n"
 
-
     message += f"\n💰 Total: Rp {rupiah(total)}"
-
 
     await update.message.reply_text(message)
 
 
-def rupiah(amount):
-    return f"{amount:,}".replace(",", ".")
-
-
 async def add(update, context, category):
-
 
     if not is_allowed(update):
         return
 
-    print("ARGS:", context.args)
-
     try:
+
         amount = int(context.args[0])
         username = update.effective_user.first_name
 
-        save_to_google_sheet(category, amount, username)
+        save_to_google_sheet(
+            category,
+            amount,
+            username
+        )
 
         await update.message.reply_text(
             f"✅ {category} Rp {rupiah(amount * 1000)} tersimpan"
         )
 
-    except Exception as e:
-        print("ERROR:", e)
+    except:
+        await update.message.reply_text(
+            f"Contoh: /{category.lower()} 25"
+        )
 
-
-        #await update.message.reply_text(
-        #   "Contoh: /kopi 25"
-        #)
 
 async def kopi(update, context):
     await add(update, context, "Kopi")
@@ -447,7 +362,6 @@ app.add_handler(CommandHandler("bensin", bensin))
 app.add_handler(CommandHandler("summary", summary))
 app.add_handler(CommandHandler("me", me))
 app.add_handler(CommandHandler("month", month))
-app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("today", today))
 app.add_handler(CommandHandler("top", top))
 app.add_handler(CommandHandler("skincare", skincare))
