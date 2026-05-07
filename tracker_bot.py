@@ -3,6 +3,7 @@ from openpyxl import load_workbook
 from dotenv import load_dotenv
 from datetime import datetime
 import os
+import json
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -47,10 +48,12 @@ def get_sheet():
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = Credentials.from_service_account_file(
-        "financebot-key.json",
-        scopes=scope
-    )
+    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+creds = Credentials.from_service_account_info(
+    google_creds,
+    scopes=scope
+)
 
     client = gspread.authorize(creds)
 
@@ -63,10 +66,12 @@ def save_to_google_sheet(category, amount, username):
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = Credentials.from_service_account_file(
-        "financebot-key.json",
-        scopes=scope
-    )
+    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+creds = Credentials.from_service_account_info(
+    google_creds,
+    scopes=scope
+)
 
     client = gspread.authorize(creds)
 
@@ -97,10 +102,12 @@ async def month(update, context):
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = Credentials.from_service_account_file(
-        "financebot-key.json",
-        scopes=scope
-    )
+    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+creds = Credentials.from_service_account_info(
+    google_creds,
+    scopes=scope
+)
 
     client = gspread.authorize(creds)
     sheet = client.open("Daily Finance").worksheet("Pengeluaran")
@@ -284,10 +291,12 @@ async def summary(update, context):
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = Credentials.from_service_account_file(
-        "financebot-key.json",
-        scopes=scope
-    )
+    google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+creds = Credentials.from_service_account_info(
+    google_creds,
+    scopes=scope
+)
 
     client = gspread.authorize(creds)
 
