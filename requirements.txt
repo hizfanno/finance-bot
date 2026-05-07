@@ -8,3 +8,7 @@ idna==3.13
 openpyxl==3.1.5
 python-dotenv==1.2.2
 python-telegram-bot==22.7
+python-telegram-bot>=20
+gspread
+google-auth
+python-dotenv
