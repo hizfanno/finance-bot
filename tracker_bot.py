@@ -41,8 +41,7 @@ def save_to_excel(category, amount):
 
     wb.save(EXCEL_FILE)
 
-def get_sheet():
-
+    def get_sheet():
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
@@ -50,10 +49,10 @@ def get_sheet():
 
     google_creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
-creds = Credentials.from_service_account_info(
-    google_creds,
-    scopes=scope
-)
+    creds = Credentials.from_service_account_info(
+        google_creds,
+        scopes=scope
+    )
 
     client = gspread.authorize(creds)
 
