@@ -2,3 +2,5 @@ config.env
 DailyFinance.xlsx
 ~$*.xlsx
 __pycache__/
+
+*.json
