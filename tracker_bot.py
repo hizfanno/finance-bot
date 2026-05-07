@@ -41,7 +41,8 @@ def save_to_excel(category, amount):
 
     wb.save(EXCEL_FILE)
 
-    def get_sheet():
+def get_sheet():
+
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
