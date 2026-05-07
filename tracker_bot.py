@@ -294,6 +294,35 @@ async def me(update, context):
 
     await update.message.reply_text(message)
 
+async def help_command(update, context):
+
+    if not is_allowed(update):
+        return
+
+    message = """
+📋 Finance Bot Menu
+
+➕ Input Pengeluaran
+☕ /kopi 25
+🚬 /rokok 36
+⛽ /bensin 50
+🍜 /makan 20
+🧴 /skincare 50
+✨ /lifestyle 100
+🛍️ /kebutuhan 75
+📦 /misc 20
+
+📊 Report
+📅 /month
+📆 /today
+👤 /me
+🏆 /top
+
+ℹ️ /help
+"""
+
+    await update.message.reply_text(message)
+
 
 async def add(update, context, category):
 
