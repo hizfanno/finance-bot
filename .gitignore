@@ -1,0 +1,4 @@
+config.env
+DailyFinance.xlsx
+~$*.xlsx
+__pycache__/
