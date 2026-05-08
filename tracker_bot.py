@@ -7,6 +7,10 @@ import json
 
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+TZ = ZoneInfo("Asia/Jakarta")
 
 
 load_dotenv("config.env")
@@ -57,7 +61,7 @@ def save_to_excel(category, amount):
     while ws[f"A{row}"].value is not None:
         row += 1
 
-    ws[f"A{row}"] = datetime.now().strftime("%d-%m-%Y")
+    ws[f"A{row}"] = datetime.now(TZ).strftime("%d-%m-%Y")
     ws[f"B{row}"] = OWNER
     ws[f"C{row}"] = category
     ws[f"D{row}"] = 1
@@ -71,7 +75,7 @@ def save_to_google_sheet(category, amount, username):
     sheet = get_sheet()
 
     row = [
-        datetime.now().strftime("%d-%m-%Y %H:%M"),
+        datetime.now(TZ).strftime("%d-%m-%Y %H:%M"),
         username,
         category,
         1,
@@ -94,7 +98,7 @@ async def month(update, context):
     sheet = get_sheet()
     rows = sheet.get_all_values()
 
-    current_month = datetime.now().strftime("%m-%Y")
+    current_month = datetime.now(TZ).strftime("%m-%Y")
 
     summary = {}
     total = 0
@@ -119,7 +123,7 @@ async def month(update, context):
         summary[kategori] = summary.get(kategori, 0) + nominal
         total += nominal
 
-    message = f"📅 {datetime.now().strftime('%B %Y')} — {username}\n\n"
+    message = f"📅 {datetime.now(TZ).strftime('%B %Y')} — {username}\n\n"
 
     for kategori, amount in summary.items():
         message += f"{kategori}: Rp {rupiah(amount)}\n"
@@ -139,7 +143,7 @@ async def today(update, context):
     sheet = get_sheet()
     rows = sheet.get_all_values()
 
-    today_date = datetime.now().strftime("%d-%m-%Y")
+    today_date = datetime.now(TZ).strftime("%d-%m-%Y")
 
     summary = {}
     total = 0
@@ -184,7 +188,7 @@ async def top(update, context):
     sheet = get_sheet()
     rows = sheet.get_all_values()
 
-    current_month = datetime.now().strftime("%m-%Y")
+    current_month = datetime.now(TZ).strftime("%m-%Y")
 
     summary = {}
 
@@ -397,6 +401,7 @@ app.add_handler(CommandHandler("skincare", skincare))
 app.add_handler(CommandHandler("lifestyle", lifestyle))
 app.add_handler(CommandHandler("kebutuhan", kebutuhan))
 app.add_handler(CommandHandler("misc", misc))
+app.add_handler(CommandHandler("help", help_command))
 
 print("Bot running...")
 
